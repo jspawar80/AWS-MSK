@@ -179,47 +179,49 @@ resource "aws_msk_cluster" "example" {
       ebs_storage_info {
         volume_size = 1000
       }
-  }
+    }  # <-- Add this closing brace for broker_node_group_info block.
 
-  configuration_info {
-    arn      = aws_msk_configuration.example.arn
-    revision = aws_msk_configuration.example.latest_revision
-  }
-
-  encryption_info {
-    encryption_at_rest_kms_key_arn = aws_kms_key.example.arn
-    encryption_in_transit {
-      client_broker = "PLAINTEXT"
-      in_cluster    = true
+    configuration_info {
+      arn      = aws_msk_configuration.example.arn
+      revision = aws_msk_configuration.example.latest_revision
     }
-  }
 
-  client_authentication {
-    sasl {
-      iam = true
-    }
-  }
-
-  open_monitoring {
-    prometheus {
-      jmx_exporter {
-        enabled_in_broker = true
-      }
-      node_exporter {
-        enabled_in_broker = true
+    encryption_info {
+      encryption_at_rest_kms_key_arn = aws_kms_key.example.arn
+      encryption_in_transit {
+        client_broker = "PLAINTEXT"
+        in_cluster    = true
       }
     }
-  }
 
-  logging_info {
-    broker_logs {
-      cloudwatch_logs {
-        enabled = true
-        log_group = "<your-log-group>"
+    client_authentication {
+      sasl {
+        iam = true
       }
     }
-  }
+
+    open_monitoring {
+      prometheus {
+        jmx_exporter {
+          enabled_in_broker = true
+        }
+        node_exporter {
+          enabled_in_broker = true
+        }
+      }
+    }
+
+    logging_info {
+      broker_logs {
+        cloudwatch_logs {
+          enabled = true
+          log_group = "<your-log-group>"
+        }
+      }
+    }
+  }  # <-- Add this closing brace for aws_msk_cluster block.
 }
+
 
 resource "aws_kms_key" "example" {
   description = "KMS key for encrypting MSK data at rest"
