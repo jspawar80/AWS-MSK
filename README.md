@@ -115,7 +115,7 @@ resource "aws_subnet" "subnet2" {
 }
 
 resource "aws_eip" "nat_eip" {
-  vpc = true
+  domain = "vpc"
   depends_on = [aws_internet_gateway.gw]
 }
 
@@ -173,7 +173,7 @@ resource "aws_msk_cluster" "example" {
 
   broker_node_group_info {
     instance_type   = "kafka.t3.small"
-    ebs_volume_size = 10
+    ebs_storage_info = 10
     client_subnets  = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
     security_groups = [aws_security_group.sg.id]
   }
