@@ -166,16 +166,19 @@ PROPERTIES
 }
 
 resource "aws_msk_cluster" "example" {
-  cluster_name          = "<your-cluster-name>"
+  cluster_name          = "test"
   kafka_version         = "2.8.1"
   number_of_broker_nodes = 2
   enhanced_monitoring = "DEFAULT"
 
   broker_node_group_info {
     instance_type   = "kafka.t3.small"
-    ebs_storage_info = 10
     client_subnets  = [aws_subnet.subnet1.id, aws_subnet.subnet2.id]
     security_groups = [aws_security_group.sg.id]
+    storage_info {
+      ebs_storage_info {
+        volume_size = 1000
+      }
   }
 
   configuration_info {
