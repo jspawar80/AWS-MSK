@@ -1,60 +1,4 @@
 ```
-# A new internet gateway
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.vpc.id
-}
-
-# A new route table
-resource "aws_route_table" "example" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gw.id
-  }
-
-  tags = {
-    Name = "example"
-  }
-}
-
-# A new subnet association
-resource "aws_route_table_association" "a" {
-  subnet_id      = aws_subnet.subnet_az1.id
-  route_table_id = aws_route_table.example.id
-}
-
-resource "aws_route_table_association" "b" {
-  subnet_id      = aws_subnet.subnet_az2.id
-  route_table_id = aws_route_table.example.id
-}
-
-# A new NAT gateway with an Elastic IP address
-resource "aws_eip" "example" {
-  vpc = true
-}
-
-resource "aws_nat_gateway" "example" {
-  allocation_id = aws_eip.example.id
-  subnet_id     = aws_subnet.subnet_az1.id
-}
-
-# A new route table pointing to the NAT gateway
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.example.id
-  }
-}
-
-# Associating the private route table to the second subnet
-resource "aws_route_table_association" "private" {
-  subnet_id      = aws_subnet.subnet_az2.id
-  route_table_id = aws_route_table.private.id
-}
-
 provider "aws" {
   region = "us-west-2"
 }
@@ -75,9 +19,55 @@ resource "aws_subnet" "subnet_az2" {
   availability_zone = "us-west-2b"
 }
 
+resource "aws_internet_gateway" "gw" {
+  vpc_id = aws_vpc.vpc.id
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw.id
+  }
+}
+
+resource "aws_route_table_association" "public_az1" {
+  subnet_id      = aws_subnet.subnet_az1.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_az2" {
+  subnet_id      = aws_subnet.subnet_az2.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+}
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.subnet_az1.id
+}
+
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.vpc.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat.id
+  }
+}
+
+resource "aws_route_table_association" "private_az2" {
+  subnet_id      = aws_subnet.subnet_az2.id
+  route_table_id = aws_route_table.private.id
+}
+
 resource "aws_security_group" "sg" {
   vpc_id = aws_vpc.vpc.id
-  
+
   ingress {
     from_port   = 22
     to_port     = 22
@@ -103,8 +93,16 @@ resource "aws_msk_cluster" "example" {
   broker_node_group_info {
     instance_type   = "kafka.t3.small"
     client_subnets  = [aws_subnet.subnet_az1.id, aws_subnet.subnet_az2.id]
-    ebs_volume_size = 10
     security_groups = [aws_security_group.sg.id]
+    storage_info {
+      ebs_storage_info {
+        provisioned_throughput {
+          enabled           = true
+          volume_throughput = 250
+        }
+        volume_size = 1000
+      }
+    }
   }
 
   client_authentication {
@@ -162,4 +160,4 @@ auto.create.topics.enable = true
 zookeeper.connection.timeout.ms = 1000
 PROPERTIES
 }
-
+```
