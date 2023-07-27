@@ -1,13 +1,20 @@
-provider "aws" {
-  region = "us-west-2"
-}
-
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
   enable_dns_support = true
   enable_dns_hostnames = true
   tags       = {
       Name = "Terraform VPC"
+  }
+}
+
+resource "aws_security_group" "sg" {
+  vpc_id = aws_vpc.main.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
