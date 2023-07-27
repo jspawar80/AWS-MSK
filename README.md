@@ -7,83 +7,6 @@ terraform version
 ```
 
 ```
-provider "aws" {
-  region = "us-west-2"
-}
-
-resource "aws_vpc" "vpc" {
-  cidr_block = "10.0.0.0/16"
-}
-
-resource "aws_subnet" "subnet_az1" {
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-west-2a"
-}
-
-resource "aws_subnet" "subnet_az2" {
-  vpc_id            = aws_vpc.vpc.id
-  cidr_block        = "10.0.2.0/24"
-  availability_zone = "us-west-2b"
-}
-
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.vpc.id
-}
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.gw.id
-  }
-}
-
-resource "aws_route_table_association" "public_az1" {
-  subnet_id      = aws_subnet.subnet_az1.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "public_az2" {
-  subnet_id      = aws_subnet.subnet_az2.id
-  route_table_id = aws_route_table.public.id
-}
-
-resource "aws_eip" "nat" {
-  domain = "vpc"
-}
-
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.subnet_az1.id
-}
-
-resource "aws_route_table" "private" {
-  vpc_id = aws_vpc.vpc.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
-  }
-}
-
-resource "aws_route_table_association" "private_az2" {
-  subnet_id      = aws_subnet.subnet_az2.id
-  route_table_id = aws_route_table.private.id
-}
-
-resource "aws_security_group" "sg" {
-  vpc_id = aws_vpc.vpc.id
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 resource "aws_kms_key" "kms" {
   description             = "Key for MSK"
   deletion_window_in_days = 10
@@ -100,7 +23,7 @@ resource "aws_msk_cluster" "example" {
 
   broker_node_group_info {
     instance_type   = "kafka.t3.small"
-    client_subnets  = [aws_subnet.subnet_az1.id, aws_subnet.subnet_az2.id]
+    client_subnets  = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
     security_groups = [aws_security_group.sg.id]
     storage_info {
       ebs_storage_info {
