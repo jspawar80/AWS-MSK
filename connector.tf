@@ -30,8 +30,8 @@ resource "aws_mskconnect_connector" "example" {
       bootstrap_servers = aws_msk_cluster.example.bootstrap_brokers_tls
 
       vpc {
-        security_groups = [aws_security_group.example.id]
-        subnets         = [aws_subnet.example1.id, aws_subnet.example2.id, aws_subnet.example3.id]
+        security_groups = [aws_security_group.sg.id]
+        subnets         = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
       }
     }
   }
@@ -44,12 +44,12 @@ resource "aws_mskconnect_connector" "example" {
     encryption_type = "TLS"
   }
 
-  plugin {
-    custom_plugin {
-      arn      = aws_mskconnect_custom_plugin.example.arn
-      revision = aws_mskconnect_custom_plugin.example.latest_revision
-    }
-  }
+
+#data "aws_mskconnect_custom_plugin" "example" {
+ # name = "example-debezium-1"
+  #arn      = aws_mskconnect_custom_plugin.example.arn
+  #latest_reversion = ID
+#}
 
   service_execution_role_arn = aws_iam_role.example.arn
 }
